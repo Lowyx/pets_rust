@@ -3,10 +3,12 @@ extern crate curve25519_dalek;
 extern crate rand;
 
 use aead::generic_array::GenericArray;
-use aes_gcm::aead::{Aead, KeyInit}; // Use KeyInit for the `new` method
+//use aead::AeadCore;
+use aes_gcm::aead::{Aead, KeyInit}; // use aes_gcm::aes::cipher;
+// Use KeyInit for the `new` method
 use aes_gcm::{Aes256Gcm, Nonce}; // AES-GCM with 256-bit key
 use curve25519_dalek::scalar::Scalar;
-use rand::{rngs::OsRng, Rng};
+use rand::{rngs::OsRng};
 
 const AES_KEY_SIZE: usize = 32; // AES-256 requires a 256-bit key (32 bytes)
 pub const AES_NONCE_SIZE: usize = 12; // Recommended nonce size for AES-GCM is 12 bytes
@@ -36,10 +38,41 @@ impl AESCiphertext {
     }
 
     /// Encrypts a plaintext message using AES-256-GCM with a Scalar as the AES key
-    pub fn encrypt(scalar_key: &Scalar, message: &[u8]) -> Result<AESCiphertext, String> {}
+    pub fn encrypt(scalar_key: &Scalar, message: &[u8]) -> Result<AESCiphertext, String> {
+        // Convert the Scalar to a 32-byte array to be used as the AES key
+        let key = AESCiphertext::scalar_to_aes_key(scalar_key);
+
+        // Generate a random nonce
+        let nonce = [0u8; AES_NONCE_SIZE]; 
+        // let mut nonce = [0u8; AES_NONCE_SIZE];
+        // OsRng.fill(&mut nonce).map_err(|e| e.to_string())?;
+
+        // Create an AES-GCM cipher instance, convert scalar_key to GenericArray
+        //let cipher = Aes256Gcm::new(scalar_key)
+        let cipher = Aes256Gcm::new(GenericArray::from_slice(&key));
+
+        // Encrypt the message
+        let ciphertext = cipher
+            .encrypt(&Nonce::from_slice(&nonce), message)
+            .expect("encryption failure!");
+        // Return the AES ciphertext and nonce
+        Ok(AESCiphertext { nonce, ciphertext })
+    }   
 
     /// Decrypts a ciphertext using AES-256-GCM with a Scalar as the AES key
     pub fn decrypt(scalar_key: &Scalar, aes_ciphertext: &AESCiphertext) -> Result<Vec<u8>, String> {
+        // convert key to 32-byte array
+        let key = AESCiphertext::scalar_to_aes_key(scalar_key);
+
+        // get nonce and ciphertext
+        let nonce = Nonce::from_slice(&aes_ciphertext.nonce);
+        let ciphertext = aes_ciphertext.ciphertext.as_slice();
+
+        // get plaintext
+        let cipher = Aes256Gcm::new(GenericArray::from_slice(&key));
+        let plaintext = cipher.decrypt(&nonce, ciphertext).expect("decryption failure!");
+        Ok(plaintext)
+
     }
 }
 
