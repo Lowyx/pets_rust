@@ -4,7 +4,7 @@ extern crate rand;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
-use rand::rngs::OsRng;
+use rand::{random, rngs::OsRng};
 use sha2::{Digest, Sha512};
 
 use crate::keys::KeyPair;
@@ -17,15 +17,56 @@ pub struct ElGamalCiphertext {
 
 impl ElGamalCiphertext {
     /// Generates a new KeyPair for encryption
-    pub fn keygen() -> KeyPair {}
+    pub fn keygen() -> KeyPair {
+        KeyPair::generate()
+    }
 
     /// Encrypts a message (represented as a scalar) using the recipient's public key
     /// Returns an `ElGamalCiphertext` struct containing the encrypted message
-    pub fn encrypt(message: &Scalar, public_key: &RistrettoPoint) -> ElGamalCiphertext {}
+    pub fn encrypt(message: &Scalar, public_key: &RistrettoPoint) -> ElGamalCiphertext {
+        //generate random r from Zp
+        let r = Scalar::random(&mut OsRng); 
+        //calculate c1 from g^r
+        let c1 = r * RISTRETTO_BASEPOINT_POINT;
+        //calculate the shared secret pk^r
+        let secret = r * public_key;
+        //prepare new hash
+        let mut hasher = Sha512::new();
+        //converting shared secret (RistrettoPoint) in bytes
+        hasher.update(secret.compress().to_bytes());
+        //hashing of converted shared secret
+        let hashed_secret = hasher.finalize();
+        //convert the first 32 bytes into an [u8; 32] array
+        let mut hashed_bytes = [0u8; 32];
+        hashed_bytes.copy_from_slice(&hashed_secret[..32]);
+        //treat hashed shared secret as Scalar
+        let hashed_scalar = Scalar::from_bytes_mod_order(hashed_bytes);
+        //calculate c2 from H(pk^r)+m
+        let c2 = hashed_scalar + message;
+        //return ElGamal Ciphertext
+        ElGamalCiphertext{c1,c2}
+    }
 
     /// Decrypts an ElGamal ciphertext using the recipient's private key
     /// Returns the decrypted scalar (original message)
-    pub fn decrypt(&self, private_key: &Scalar) -> Scalar {}
+    pub fn decrypt(&self, private_key: &Scalar) -> Scalar {
+        //prepare new hash
+        let mut hasher = Sha512::new();
+        //calculate c1^sk
+        let secret = self.c1 * private_key;
+        //converting secret (RistrettoPoint) in bytes
+        hasher.update(secret.compress().to_bytes());
+        //hashing
+        let hashed_secret = hasher.finalize();
+        //convert the first 32 bytes into an [u8; 32] array
+        let mut hashed_bytes = [0u8; 32];
+        hashed_bytes.copy_from_slice(&hashed_secret[..32]);
+        //treat hashed shared secret as Scalar
+        let hashed_scalar = Scalar::from_bytes_mod_order(hashed_bytes);
+        //calculate and return message m
+        let m = self.c2 - hashed_scalar;
+        m
+    }
 }
 
 #[cfg(test)]
