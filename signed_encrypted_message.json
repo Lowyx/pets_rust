@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "payload": "",
+  "recipient": "",
+  "sender": "",
+  "signature": {
+    "R": "",
+    "s": ""
+  }
+}
