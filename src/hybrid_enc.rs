@@ -1,9 +1,9 @@
-use crate::aes::{encrypt_message, AESCiphertext, AES_NONCE_SIZE};
+use crate::aes::{AESCiphertext, AES_NONCE_SIZE};
 use crate::elgamal::ElGamalCiphertext;
 use crate::keys::KeyPair;
 use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
-use curve25519_dalek::scalar::Scalar;
+use curve25519_dalek::scalar::{self, Scalar};
 
 pub struct HybridCiphertext {
     pub elgamal_ciphertext: ElGamalCiphertext,
@@ -15,14 +15,24 @@ impl HybridCiphertext {
         ElGamalCiphertext::keygen()
     }
 
-    pub fn encrypt(
-        message: &[u8],
-        public_key: &RistrettoPoint,
-    ) -> Result<HybridCiphertext, String> {
+    pub fn encrypt(message: &[u8],public_key: &RistrettoPoint) -> Result<HybridCiphertext, String> {
+        let aes_key = AESCiphertext::keygen().to_bytes();
+        let aes_result = AESCiphertext::encrypt(scalar_key, message);
+        
+        let elgamal_ciphertext = ElGamalCiphertext::encrypt(&aes_key, public_key);
+        Ok(HybridCiphertext {
+            elgamal_ciphertext,
+            aes_result,
+        })
+
     }
 
     /// Hybrid decryption: Decrypts the AES key using the ElGamal private key, then decrypts the AES ciphertext
-    pub fn decrypt(&self, private_key: &Scalar) -> Result<Vec<u8>, String> {}
+    pub fn decrypt(&self, private_key: &Scalar) -> Result<Vec<u8>, String> {
+        let aes_key = ElGamalCiphertext::decrypt(&self.elgamal_ciphertext, private_key);    
+        let plaintext = AESCiphertext::decrypt(&aes_key, &self.aes_ciphertext);
+        Ok(plaintext)
+    }
 
     /// Serializes the HybridCiphertext into a Vec<u8>
     pub fn serialize(&self) -> Vec<u8> {
