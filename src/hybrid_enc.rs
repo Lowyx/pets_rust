@@ -16,14 +16,16 @@ impl HybridCiphertext {
     }
 
     pub fn encrypt(message: &[u8],public_key: &RistrettoPoint) -> Result<HybridCiphertext, String> {
-        let aes_key = AESCiphertext::keygen().to_bytes();
-        let aes_result = AESCiphertext::encrypt(scalar_key, message);
-        
+        let aes_key = AESCiphertext::keygen();
+        let aes_result = AESCiphertext::encrypt(&aes_key, message)?;
+
         let elgamal_ciphertext = ElGamalCiphertext::encrypt(&aes_key, public_key);
+       
+       
         Ok(HybridCiphertext {
             elgamal_ciphertext,
-            aes_result,
-        })
+            aes_ciphertext: aes_result,
+            })
 
     }
 
@@ -31,7 +33,7 @@ impl HybridCiphertext {
     pub fn decrypt(&self, private_key: &Scalar) -> Result<Vec<u8>, String> {
         let aes_key = ElGamalCiphertext::decrypt(&self.elgamal_ciphertext, private_key);    
         let plaintext = AESCiphertext::decrypt(&aes_key, &self.aes_ciphertext);
-        Ok(plaintext)
+        plaintext
     }
 
     /// Serializes the HybridCiphertext into a Vec<u8>
