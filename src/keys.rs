@@ -16,7 +16,14 @@ pub struct KeyPair {
 
 impl KeyPair {
     /// Generate a Schnorr signature key pair
-    pub fn generate() -> KeyPair {}
+    pub fn generate() -> KeyPair {
+        let private_key = Scalar::random(&mut OsRng);
+        let public_key = private_key * RISTRETTO_BASEPOINT_POINT;
+        KeyPair {
+            private_key,
+            public_key,
+        }
+    }
 }
 
 // Unit tests for keys module
