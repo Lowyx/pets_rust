@@ -16,17 +16,52 @@ pub struct SchnorrSignature {
 
 impl SchnorrSignature {
     /// Generates a new KeyPair for signing
-    pub fn keygen() -> KeyPair {}
+    pub fn keygen() -> KeyPair {
+        let private_key = Scalar::random(&mut OsRng);
+        let public_key = private_key * &RISTRETTO_BASEPOINT_POINT;
+        KeyPair {
+            private_key,
+            public_key,
+        }
+    }
 
     /// Sign a message with a private key
-    pub fn sign(message: &[u8], signing_key: &Scalar) -> SchnorrSignature {}
+    pub fn sign(message: &[u8], signing_key: &Scalar) -> SchnorrSignature {
+        
+        // choose random r from Zp
+        let k = Scalar::random(&mut OsRng);
+
+        // calculate R = r * G
+        let R = k * &RISTRETTO_BASEPOINT_POINT;
+        
+        // hash R and message
+        let mut hasher = Sha512::new();
+        hasher.update(&R.compress().to_bytes());
+        hasher.update(message);
+
+        // calculate s
+        let s = k + signing_key * Scalar::from_hash(hasher);
+        SchnorrSignature {
+            R,
+            s,
+        }
+    }
 
     /// Verify a Schnorr signature
-    pub fn verify(
-        signature: &SchnorrSignature,
-        message: &[u8],
-        public_key: &RistrettoPoint,
-    ) -> bool {
+    pub fn verify(signature: &SchnorrSignature,message: &[u8],public_key: &RistrettoPoint) -> bool {
+        // hash R and message
+        let mut hasher = Sha512::new();
+        hasher.update(&signature.R.compress().to_bytes());
+        hasher.update(message);
+
+        // Calculate h
+        let h = Scalar::from_hash(hasher);
+
+        // Verify the signature
+        let lhs = signature.s * RISTRETTO_BASEPOINT_POINT;
+        let rhs = signature.R + h * public_key;
+
+        lhs == rhs
     }
 
     // Converts RistrettoPoint to a byte array
