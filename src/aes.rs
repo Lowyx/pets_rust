@@ -3,12 +3,10 @@ extern crate curve25519_dalek;
 extern crate rand;
 
 use aead::generic_array::GenericArray;
-//use aead::AeadCore;
-use aes_gcm::aead::{Aead, KeyInit}; // use aes_gcm::aes::cipher;
-// Use KeyInit for the `new` method
+use aes_gcm::aead::{Aead, KeyInit}; // Use KeyInit for the `new` method
 use aes_gcm::{Aes256Gcm, Nonce}; // AES-GCM with 256-bit key
 use curve25519_dalek::scalar::Scalar;
-use rand::{rngs::OsRng};
+use rand::{rngs::OsRng, Rng};
 
 const AES_KEY_SIZE: usize = 32; // AES-256 requires a 256-bit key (32 bytes)
 pub const AES_NONCE_SIZE: usize = 12; // Recommended nonce size for AES-GCM is 12 bytes
@@ -43,18 +41,17 @@ impl AESCiphertext {
         let key = AESCiphertext::scalar_to_aes_key(scalar_key);
 
         // Generate a random nonce
-        let nonce = [0u8; AES_NONCE_SIZE]; 
-        // let mut nonce = [0u8; AES_NONCE_SIZE];
-        // OsRng.fill(&mut nonce).map_err(|e| e.to_string())?;
+        let mut nonce = [0u8; AES_NONCE_SIZE];
+        OsRng.fill(&mut nonce);
 
         // Create an AES-GCM cipher instance, convert scalar_key to GenericArray
-        //let cipher = Aes256Gcm::new(scalar_key)
         let cipher = Aes256Gcm::new(GenericArray::from_slice(&key));
 
         // Encrypt the message
         let ciphertext = cipher
             .encrypt(&Nonce::from_slice(&nonce), message)
             .expect("encryption failure!");
+
         // Return the AES ciphertext and nonce
         Ok(AESCiphertext { nonce, ciphertext })
     }   
@@ -71,8 +68,8 @@ impl AESCiphertext {
         // get plaintext
         let cipher = Aes256Gcm::new(GenericArray::from_slice(&key));
         let plaintext = cipher.decrypt(&nonce, ciphertext).expect("decryption failure!");
-        Ok(plaintext)
 
+        Ok(plaintext)
     }
 }
 
