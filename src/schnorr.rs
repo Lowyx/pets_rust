@@ -22,13 +22,12 @@ impl SchnorrSignature {
 
     /// Sign a message with a private key
     pub fn sign(message: &[u8], signing_key: &Scalar) -> SchnorrSignature {
-        
         // choose random r from Zp
         let r = Scalar::random(&mut OsRng);
 
         // calculate R = r * G
         let R = r * &RISTRETTO_BASEPOINT_POINT;
-        
+
         // hash R and message
         let mut hasher = Sha512::new();
         hasher.update(&R.compress().to_bytes());
@@ -37,14 +36,15 @@ impl SchnorrSignature {
         // calculate signature
         let s = r + signing_key * Scalar::from_hash(hasher);
 
-        SchnorrSignature {
-            R,
-            s,
-        }
+        SchnorrSignature { R, s }
     }
 
     /// Verify a Schnorr signature
-    pub fn verify(signature: &SchnorrSignature,message: &[u8],public_key: &RistrettoPoint) -> bool {
+    pub fn verify(
+        signature: &SchnorrSignature,
+        message: &[u8],
+        public_key: &RistrettoPoint,
+    ) -> bool {
         // hash R and message
         let mut hasher = Sha512::new();
         hasher.update(&signature.R.compress().to_bytes());

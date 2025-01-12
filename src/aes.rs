@@ -54,7 +54,7 @@ impl AESCiphertext {
 
         // Return the AES ciphertext and nonce
         Ok(AESCiphertext { nonce, ciphertext })
-    }   
+    }
 
     /// Decrypts a ciphertext using AES-256-GCM with a Scalar as the AES key
     pub fn decrypt(scalar_key: &Scalar, aes_ciphertext: &AESCiphertext) -> Result<Vec<u8>, String> {
@@ -67,7 +67,9 @@ impl AESCiphertext {
 
         // get plaintext
         let cipher = Aes256Gcm::new(GenericArray::from_slice(&key));
-        let plaintext = cipher.decrypt(&nonce, ciphertext).expect("decryption failure!");
+        let plaintext = cipher
+            .decrypt(&nonce, ciphertext)
+            .expect("decryption failure!");
 
         Ok(plaintext)
     }

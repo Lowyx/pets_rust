@@ -14,10 +14,13 @@ use schnorr::SchnorrSignature;
 
 fn main() {
     /*** Test with the provided public key and signing key from Challenge 7 guidelines ***/
+    println!("[Test keygen, encryption and decryption with abitrarily generated keys]");
 
-    // Import the public key and signing key from the challenge 7 guidelines
+    // Load the encryption key from challenge 7 guidelines
     let chall7_encryption_key =
         KeyPair::pk_from_file("encryption_key.txt").expect("Failed to load the encryption key");
+
+    // Load the signing key from challenge 7 guidelines
     let chall7_signing_key =
         KeyPair::sk_from_file("signing_key.txt").expect("Failed to load the signing key");
 
@@ -43,7 +46,7 @@ fn main() {
 
 
 
-    /*** Test with abitrarily generated keys ***/
+    /*** Test keygen, encryption and decryption with abitrarily generated keys ***/
 
     /* Key generation */
     // Generate an ecryption KeyPair

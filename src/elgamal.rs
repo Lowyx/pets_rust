@@ -25,7 +25,7 @@ impl ElGamalCiphertext {
     /// Returns an `ElGamalCiphertext` struct containing the encrypted message
     pub fn encrypt(message: &Scalar, public_key: &RistrettoPoint) -> ElGamalCiphertext {
         //generate random r from Zp
-        let r = Scalar::random(&mut OsRng); 
+        let r = Scalar::random(&mut OsRng);
         //calculate c1 from g^r
         let c1 = r * RISTRETTO_BASEPOINT_POINT;
         //calculate the shared secret pk^r
@@ -44,7 +44,7 @@ impl ElGamalCiphertext {
         //calculate c2 from H(pk^r)+m
         let c2 = hashed_scalar + message;
         //return ElGamal Ciphertext
-        ElGamalCiphertext{c1,c2}
+        ElGamalCiphertext { c1, c2 }
     }
 
     /// Decrypts an ElGamal ciphertext using the recipient's private key
