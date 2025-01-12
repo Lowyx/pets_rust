@@ -1,5 +1,4 @@
 use crate::hybrid_enc::HybridCiphertext;
-use crate::keys::KeyPair;
 use crate::schnorr::SchnorrSignature;
 use crate::serializers::*;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT; // addition
@@ -39,8 +38,8 @@ impl Message {
     pub fn new(
         version: u8,
         payload: Vec<u8>,
-        recipient: CompressedRistretto, // inconsistent with line 25 "pub recipient: [u8; 32]"
-        sender: CompressedRistretto, // inconsistent with line 30 "pub sender: [u8; 32]"
+        recipient: CompressedRistretto,
+        sender: CompressedRistretto,
         signature: SchnorrSignature,
     ) -> Self {
         Message {
@@ -70,11 +69,9 @@ impl Message {
     }
 
     /// Reads a message from a JSON file
-    /// Returns an error if the file does not exist or if the file is not a valid JSON
     pub fn from_file(filepath: &str) -> Result<Self, String> {
         let file = File::open(filepath).map_err(|e| e.to_string())?;
         let reader = std::io::BufReader::new(file);
-
         let message: Message = serde_json::from_reader(reader).map_err(|e| e.to_string())?;
 
         Ok(message)
@@ -117,10 +114,13 @@ impl Message {
         self.recipient = decrypted_message.recipient;
         self.signature = decrypted_message.signature;
 
+        // Note: the signature attribute will be equal to SchnorrSignature::empty_signature()
+        // because the whole message was signed after encryption so we cannot update it.
+
         Ok(())
     }
 
-    /// signs the payload using Schnorr signatures, sets the signing public key as sender
+    /// Signs the payload using Schnorr signatures, sets the signing public key as sender
     pub fn sign(&mut self, signing_key: &Scalar) {
         let verification_key = signing_key * RISTRETTO_BASEPOINT_POINT;
 
@@ -136,7 +136,7 @@ impl Message {
             .expect("Error converting sender to CompressedRistretto")
             .decompress()
             .expect("Error decompressing sender to RistrettoPoint");
-        
+
         return SchnorrSignature::verify(&self.signature, &self.payload, &verification_key);
     }
 }
@@ -144,6 +144,7 @@ impl Message {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::keys::KeyPair;
     use curve25519_dalek::ristretto::RistrettoPoint;
     use rand::rngs::OsRng;
 
