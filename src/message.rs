@@ -53,6 +53,7 @@ impl Message {
         }
     }
 
+    #[allow(dead_code)]
     pub fn display(&self) {
         println!("Version: {}", self.version);
         println!("Payload: {:?}", self.payload);
@@ -67,6 +68,17 @@ impl Message {
         serde_json::to_writer_pretty(file, &self)?; // Write JSON in a human-readable format
 
         Ok(())
+    }
+
+    /// Reads a message from a JSON file
+    /// Returns an error if the file does not exist or if the file is not a valid JSON
+    pub fn from_file(filepath: &str) -> Result<Self, String> {
+        let file = File::open(filepath).map_err(|e| e.to_string())?;
+        let reader = std::io::BufReader::new(file);
+
+        let message: Message = serde_json::from_reader(reader).map_err(|e| e.to_string())?;
+
+        Ok(message)
     }
 
     /// Encrypts the whole message using hybrid encryption
