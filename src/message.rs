@@ -8,7 +8,6 @@ use curve25519_dalek::scalar::Scalar;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fs::File;
-use std::io::Read;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
@@ -147,7 +146,6 @@ mod tests {
     use super::*;
     use curve25519_dalek::ristretto::RistrettoPoint;
     use rand::rngs::OsRng;
-    use std::fs;
 
     #[test]
     fn test_message_creation() {

@@ -5,7 +5,7 @@ use curve25519_dalek::scalar::Scalar;
 use rand::rngs::OsRng;
 use std::fs::{self,File};
 use std::io::Write;
-use std::io::{self, Read};
+use std::io::{self};
 use std::path::Path;
 
 /// Struct to hold public and private key pair
