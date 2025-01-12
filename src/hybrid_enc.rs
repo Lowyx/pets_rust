@@ -3,7 +3,7 @@ use crate::elgamal::ElGamalCiphertext;
 use crate::keys::KeyPair;
 use curve25519_dalek::ristretto::CompressedRistretto;
 use curve25519_dalek::ristretto::RistrettoPoint;
-use curve25519_dalek::scalar::{self, Scalar};
+use curve25519_dalek::scalar::Scalar;
 
 pub struct HybridCiphertext {
     pub elgamal_ciphertext: ElGamalCiphertext,
@@ -15,24 +15,24 @@ impl HybridCiphertext {
         ElGamalCiphertext::keygen()
     }
 
+    /// Hybrid encryption: Encrypts the message using AES, then encrypts the AES key using ElGamal
     pub fn encrypt(message: &[u8],public_key: &RistrettoPoint) -> Result<HybridCiphertext, String> {
         let aes_key = AESCiphertext::keygen();
         let aes_result = AESCiphertext::encrypt(&aes_key, message)?;
 
         let elgamal_ciphertext = ElGamalCiphertext::encrypt(&aes_key, public_key);
        
-       
         Ok(HybridCiphertext {
             elgamal_ciphertext,
             aes_ciphertext: aes_result,
-            })
-
+        })
     }
 
     /// Hybrid decryption: Decrypts the AES key using the ElGamal private key, then decrypts the AES ciphertext
     pub fn decrypt(&self, private_key: &Scalar) -> Result<Vec<u8>, String> {
         let aes_key = ElGamalCiphertext::decrypt(&self.elgamal_ciphertext, private_key);    
         let plaintext = AESCiphertext::decrypt(&aes_key, &self.aes_ciphertext);
+
         plaintext
     }
 

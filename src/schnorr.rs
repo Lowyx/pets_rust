@@ -5,8 +5,8 @@ use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::ristretto::{CompressedRistretto, RistrettoPoint};
 use curve25519_dalek::scalar::Scalar;
 use rand::rngs::OsRng;
-
 use sha2::{Digest, Sha512};
+
 /// Struct to represent a Schnorr signature
 #[derive(Debug, PartialEq, Clone)]
 pub struct SchnorrSignature {
@@ -19,6 +19,7 @@ impl SchnorrSignature {
     pub fn keygen() -> KeyPair {
         let private_key = Scalar::random(&mut OsRng);
         let public_key = private_key * &RISTRETTO_BASEPOINT_POINT;
+        
         KeyPair {
             private_key,
             public_key,
@@ -29,18 +30,19 @@ impl SchnorrSignature {
     pub fn sign(message: &[u8], signing_key: &Scalar) -> SchnorrSignature {
         
         // choose random r from Zp
-        let k = Scalar::random(&mut OsRng);
+        let r = Scalar::random(&mut OsRng);
 
         // calculate R = r * G
-        let R = k * &RISTRETTO_BASEPOINT_POINT;
+        let R = r * &RISTRETTO_BASEPOINT_POINT;
         
         // hash R and message
         let mut hasher = Sha512::new();
         hasher.update(&R.compress().to_bytes());
         hasher.update(message);
 
-        // calculate s
-        let s = k + signing_key * Scalar::from_hash(hasher);
+        // calculate signature
+        let s = r + signing_key * Scalar::from_hash(hasher);
+
         SchnorrSignature {
             R,
             s,
