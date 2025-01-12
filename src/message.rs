@@ -2,6 +2,7 @@ use crate::hybrid_enc::HybridCiphertext;
 use crate::keys::KeyPair;
 use crate::schnorr::SchnorrSignature;
 use crate::serializers::*;
+use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT; // addition
 use curve25519_dalek::ristretto::{CompressedRistretto, RistrettoPoint};
 use curve25519_dalek::scalar::Scalar;
 use serde::{Deserialize, Serialize};
@@ -12,7 +13,6 @@ use std::io::Read;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
     pub version: u8, // The version number of the message (1 byte)
-
     #[serde(
         serialize_with = "serialize_base64",
         deserialize_with = "deserialize_base64"
@@ -40,29 +40,94 @@ impl Message {
     pub fn new(
         version: u8,
         payload: Vec<u8>,
-        sender: CompressedRistretto,
-        recipient: CompressedRistretto,
+        recipient: CompressedRistretto, // inconsistent with line 25 "pub recipient: [u8; 32]"
+        sender: CompressedRistretto, // inconsistent with line 30 "pub sender: [u8; 32]"
         signature: SchnorrSignature,
     ) -> Self {
+        Message {
+            version,
+            payload,
+            recipient: recipient.to_bytes(),
+            sender: sender.to_bytes(),
+            signature,
+        }
+    }
+
+    pub fn display(&self) {
+        println!("Version: {}", self.version);
+        println!("Payload: {:?}", self.payload);
+        println!("Recipient: {:?}", self.recipient);
+        println!("Sender: {:?}", self.sender);
+        println!("Signature: {:?}", self.signature);
     }
 
     /// Writes the message to a JSON file
     pub fn to_file(&self, filepath: &str) -> std::io::Result<()> {
         let file = File::create(filepath)?;
         serde_json::to_writer_pretty(file, &self)?; // Write JSON in a human-readable format
+
         Ok(())
     }
 
     /// Encrypts the whole message using hybrid encryption
-    pub fn encrypt(&mut self, elgamal_public_key: &RistrettoPoint) -> Result<(), String> {}
+    pub fn encrypt(&mut self, elgamal_public_key: &RistrettoPoint) -> Result<(), String> {
+        // Serialize the current message to bytes
+        let serialized_message = serialize_message_to_bytes(self)?;
 
-    /// Decrypts the payload using hybrid decryption, sets version back to 0
-    pub fn decrypt(&mut self, elgamal_private_key: &Scalar) -> Result<(), String> {}
+        // Encrypt the serialized message using the provided public key
+        let hybrid_ciphertext = HybridCiphertext::encrypt(&serialized_message, elgamal_public_key)?;
+
+        // Update the message fields with the encrypted data
+        // The payload contains the serialized hybrid ciphertext
+        self.payload = hybrid_ciphertext.serialize();
+        self.version = self.version + 1;
+        self.sender = CompressedRistretto::default().to_bytes();
+        self.recipient = elgamal_public_key.compress().to_bytes();
+        self.signature = SchnorrSignature::emty_signature();
+
+        Ok(())
+    }
+
+    /// Decrypts the payload using hybrid decryption
+    pub fn decrypt(&mut self, elgamal_private_key: &Scalar) -> Result<(), String> {
+        // Decode the Base64 payload to bytes
+        let hybrid_ciphertext = HybridCiphertext::deserialize(&self.payload)?;
+
+        // Decrypt the hybrid ciphertext
+        let decrypted_bytes = hybrid_ciphertext.decrypt(elgamal_private_key)?;
+
+        // Deserialize the decrypted bytes back into a Message
+        let decrypted_message = deserialize_message_from_bytes(&decrypted_bytes)?;
+
+        // Restore the fields of the message
+        self.version = decrypted_message.version;
+        self.payload = decrypted_message.payload;
+        self.sender = decrypted_message.sender;
+        self.recipient = decrypted_message.recipient;
+        self.signature = decrypted_message.signature;
+
+        Ok(())
+    }
 
     /// signs the payload using Schnorr signatures, sets the signing public key as sender
-    pub fn sign(&mut self, signing_key: &Scalar) {}
+    pub fn sign(&mut self, signing_key: &Scalar) {
+        let verification_key = signing_key * RISTRETTO_BASEPOINT_POINT;
 
-    pub fn verify(&self) -> bool {}
+        let sig = SchnorrSignature::sign(&self.payload, signing_key);
+
+        self.signature = sig;
+        self.sender = verification_key.compress().to_bytes();
+    }
+
+    /// Verifies the Schnorr signature of the message
+    pub fn verify(&self) -> bool {
+        let verification_key = CompressedRistretto::from_slice(&self.sender)
+            .expect("Error converting sender to CompressedRistretto")
+            .decompress()
+            .expect("Error decompressing sender to RistrettoPoint");
+        
+        return SchnorrSignature::verify(&self.signature, &self.payload, &verification_key);
+    }
 }
 
 #[cfg(test)]
