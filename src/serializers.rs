@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use crate::schnorr::SchnorrSignature;
-use crate::Message;
+use crate::message::Message;
 use base64::prelude::*;
 
 use serde::de::Error;

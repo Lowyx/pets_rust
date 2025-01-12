@@ -17,13 +17,7 @@ pub struct SchnorrSignature {
 impl SchnorrSignature {
     /// Generates a new KeyPair for signing
     pub fn keygen() -> KeyPair {
-        let private_key = Scalar::random(&mut OsRng);
-        let public_key = private_key * &RISTRETTO_BASEPOINT_POINT;
-        
-        KeyPair {
-            private_key,
-            public_key,
-        }
+        KeyPair::generate()
     }
 
     /// Sign a message with a private key
