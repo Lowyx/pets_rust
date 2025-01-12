@@ -219,4 +219,34 @@ mod tests {
             "Decrypted payload should match the original payload"
         );
     }
+
+    #[test]
+    fn test_message_signing_and_verification() {
+        // Sample message to sign
+        let payload = b"Hello, Schnorr signatures!".to_vec();
+
+        // Generate ElGamal keypair
+        let encryption_keypair = KeyPair::generate();
+
+        // Generate Schnorr keypair
+        let signing_keypair = KeyPair::generate();
+
+        // Create a new message with version 0
+        let mut message = Message::new(
+            0,
+            payload.clone(),
+            encryption_keypair.public_key.compress(),
+            signing_keypair.public_key.compress(),
+            SchnorrSignature::emty_signature(),
+        );
+
+        // Sign the message
+        message.sign(&signing_keypair.private_key);
+
+        // Verify the signature
+        let verified = message.verify();
+
+        // Ensure the signature is verified
+        assert!(verified, "Signature verification failed");
+    }
 }

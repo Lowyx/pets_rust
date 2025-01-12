@@ -98,4 +98,25 @@ mod tests {
             "Decrypted message should match the original plaintext"
         );
     }
+
+    #[test]
+    fn test_aes_two_keys_have_different_nonces() {
+        let key1 = AESCiphertext::keygen();
+        let key2 = AESCiphertext::keygen();
+
+        // Message to encrypt
+        let message = b"Hello, AES-GCM encryption using Scalar as the key!";
+
+        // Encrypt the message with the first key
+        let aes_ciphertext1 = AESCiphertext::encrypt(&key1, message).expect("Encryption failed");
+
+        // Encrypt the message with the second key
+        let aes_ciphertext2 = AESCiphertext::encrypt(&key2, message).expect("Encryption failed");
+
+        // Ensure the nonces are different
+        assert_ne!(
+            aes_ciphertext1.nonce, aes_ciphertext2.nonce,
+            "Nonces should be different for different keys"
+        );
+    }
 }
