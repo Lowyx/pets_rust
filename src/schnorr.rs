@@ -28,8 +28,11 @@ impl SchnorrSignature {
         // calculate R = r * G
         let R = r * &RISTRETTO_BASEPOINT_POINT;
 
+        let public_key = signing_key * &RISTRETTO_BASEPOINT_POINT;
+
         // hash R and message
         let mut hasher = Sha512::new();
+        hasher.update(&public_key.compress().to_bytes());
         hasher.update(&R.compress().to_bytes());
         hasher.update(message);
 
@@ -47,6 +50,7 @@ impl SchnorrSignature {
     ) -> bool {
         // hash R and message
         let mut hasher = Sha512::new();
+        hasher.update(&public_key.compress().to_bytes());
         hasher.update(&signature.R.compress().to_bytes());
         hasher.update(message);
 

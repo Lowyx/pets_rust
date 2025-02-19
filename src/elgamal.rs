@@ -32,15 +32,10 @@ impl ElGamalCiphertext {
         let secret = r * public_key;
         //prepare new hash
         let mut hasher = Sha512::new();
-        //converting shared secret (RistrettoPoint) in bytes
-        hasher.update(secret.compress().to_bytes());
-        //hashing of converted shared secret
-        let hashed_secret = hasher.finalize();
-        //convert the first 32 bytes into an [u8; 32] array
-        let mut hashed_bytes = [0u8; 32];
-        hashed_bytes.copy_from_slice(&hashed_secret[..32]);
+        //converting shared secret (RistrettoPoint) to bytes and add it to the hash
+        hasher.update(secret.compress().to_bytes());        
         //treat hashed shared secret as Scalar
-        let hashed_scalar = Scalar::from_bytes_mod_order(hashed_bytes);
+        let hashed_scalar = Scalar::from_hash(hasher);
         //calculate c2 from H(pk^r)+m
         let c2 = hashed_scalar + message;
         //return ElGamal Ciphertext
@@ -54,15 +49,10 @@ impl ElGamalCiphertext {
         let mut hasher = Sha512::new();
         //calculate c1^sk
         let secret = self.c1 * private_key;
-        //converting secret (RistrettoPoint) in bytes
+        //converting secret (RistrettoPoint) to bytes and add it to the hash
         hasher.update(secret.compress().to_bytes());
-        //hashing
-        let hashed_secret = hasher.finalize();
-        //convert the first 32 bytes into an [u8; 32] array
-        let mut hashed_bytes = [0u8; 32];
-        hashed_bytes.copy_from_slice(&hashed_secret[..32]);
         //treat hashed shared secret as Scalar
-        let hashed_scalar = Scalar::from_bytes_mod_order(hashed_bytes);
+        let hashed_scalar = Scalar::from_hash(hasher);
         //calculate and return message m
         let m = self.c2 - hashed_scalar;
         m
