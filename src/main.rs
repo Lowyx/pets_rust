@@ -14,7 +14,7 @@ use schnorr::SchnorrSignature;
 
 fn main() {
     /*** Test with the provided public key and signing key from Challenge 7 guidelines ***/
-    println!("[Test keygen, encryption and decryption with abitrarily generated keys]");
+    //println!("[Test encryption and signature with challenge 7 keys]");
 
     // Load the encryption key from challenge 7 guidelines
     let chall7_encryption_key =
@@ -45,8 +45,8 @@ fn main() {
     let _ = chall7_message.to_file("signed_encrypted_message.json");
 
 
-
     /*** Test keygen, encryption and decryption with abitrarily generated keys ***/
+    println!("[Test keygen, encryption and decryption with abitrarily generated keys]");
 
     /* Key generation */
     // Generate an ecryption KeyPair

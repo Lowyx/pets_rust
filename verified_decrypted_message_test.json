@@ -1,0 +1,10 @@
+{
+  "version": 0,
+  "payload": "R3JvdXAgSUQ6IDQ3",
+  "recipient": "OpAdM2NWNeFw/cwtOfh3ysjcfgqkwfOL1ynhdomjXms=",
+  "sender": "cFus0iUtU0HVKtEhZHZp2TcUiK2mAl4rdkrERNlaDXI=",
+  "signature": {
+    "R": "4vKuCmq8TnGohKlhxQBRX1jjC2qlgt2NtqZZReCNLXY=",
+    "s": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+  }
+}
